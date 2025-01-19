@@ -4,13 +4,15 @@
 #include <unistd.h>
 #include <thread>
 #include <regex.h>
+#include <netinet/in.h>
 
-TcpConnection::TcpConnection(int port, std::string ip_address) : 
+TcpConnection::TcpConnection(uint16_t port, std::string ip_address) : 
 m_port(port), m_ip_address(ip_address), m_socket(), m_socket_address() {
-    start_server();
     m_socket_address.sin_family = AF_INET;
     m_socket_address.sin_port = htons(m_port);
-    m_socket_address.sin_addr.s_addr = INADDR_ANY;//inet_addr(m_ip_address.c_str()); // 
+    m_socket_address.sin_addr.s_addr =  INADDR_ANY;
+    // m_socket_address.sin_addr.s_addr =  inet_addr(m_ip_address.c_str()); 
+    start_server();
 }
 
 TcpConnection::~TcpConnection(){
@@ -26,7 +28,7 @@ int TcpConnection::start_server(){
         return 1;
     }
 
-    if(bind(m_socket, (sockaddr *)&m_socket_address, sizeof(m_socket_address)) < 0){
+    if(bind(m_socket, (struct sockaddr *)&m_socket_address, sizeof(m_socket_address)) < 0){
         std::cout << "Failed to bind socket to address." << std::endl;
         exit(1);
         return 1;
@@ -41,8 +43,7 @@ void TcpConnection::close_server(){
 }
 
 void TcpConnection::start_listen(){
-
-    if(listen(m_socket, 10) < 0){
+    if(listen(m_socket, 20) < 0){
         std::cout << "Failed to listen." << std::endl;
         exit(1);
     }
@@ -52,8 +53,8 @@ void TcpConnection::start_listen(){
 }
 
 void* handle_client(void* client_socket){
-    int client_fd = *((int *)client_fd);
     char* buffer = new char[BUFFER_SIZE];
+    int client_fd = *((int *)client_socket);
 
     ssize_t bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0);
     if(bytes_received > 0){
@@ -84,8 +85,9 @@ void* handle_client(void* client_socket){
         regfree(&regex);
 
     }
-    close(client_fd);
+
     delete[] buffer;
+    close(client_fd);
     delete[] (int *)client_socket;
     return NULL;
 }
@@ -96,10 +98,9 @@ void TcpConnection::accept_connections(){
 
         struct sockaddr_in client_addr;
         socklen_t client_addr_len = sizeof(client_addr);
-
         int* client_socket = new int;
         *client_socket = accept(m_socket, (sockaddr *)&client_addr, &client_addr_len);
-        std::cout << "Accepted a connection." << std::endl;
+        std::cout << "Accepted a new connection." << std::endl;
 
         if(*client_socket < 0){
             std::cout << "Failed to accept socket from address: " << inet_ntoa(client_addr.sin_addr) << ", port: " << ntohs(client_addr.sin_port) << std::endl;

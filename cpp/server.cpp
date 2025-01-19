@@ -2,8 +2,7 @@
 
 int main(){
 
-    TcpConnection server(88,"192.168.1.20");
+    TcpConnection server(8080,"127.0.0.1");
     server.start_listen();
-    int client_fd;
     server.accept_connections();
 }

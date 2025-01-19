@@ -9,14 +9,14 @@ class TcpConnection {
 
 public: 
 
-TcpConnection(int port, std::string ip_address);
+TcpConnection(uint16_t port, std::string ip_address);
 ~TcpConnection();
 void start_listen();
 void accept_connections();
 
 private: 
 
-int m_port;
+uint16_t m_port;
 std::string m_ip_address;
 int m_socket; 
 struct sockaddr_in m_socket_address;
